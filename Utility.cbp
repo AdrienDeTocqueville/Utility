@@ -43,13 +43,13 @@
 			<Add library="C:/Windows/System32/OpenCL.dll" />
 		</Linker>
 		<Unit filename="include/Utility/Error.h" />
-		<Unit filename="include/Utility/FileReader.h" />
+		<Unit filename="include/Utility/IOFile.h" />
 		<Unit filename="include/Utility/Random.h" />
 		<Unit filename="include/Utility/Tensor.h" />
 		<Unit filename="include/Utility/Utility.h" />
 		<Unit filename="include/Utility/clWrapper.h" />
 		<Unit filename="src/Utility/Error.cpp" />
-		<Unit filename="src/Utility/FileReader.cpp" />
+		<Unit filename="src/Utility/IOFile.cpp" />
 		<Unit filename="src/Utility/Random.cpp" />
 		<Unit filename="src/Utility/Tensor.cpp" />
 		<Unit filename="src/Utility/clWrapper.cpp" />
