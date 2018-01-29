@@ -21,16 +21,17 @@ class Wrapper
 {
     public:
         Wrapper(): id(0) {}
-        ~Wrapper() {}
+        virtual ~Wrapper() {}
 
         Wrapper(const Wrapper&& c) = delete;
         operator=(const Wrapper& c) = delete;
 
         virtual void release() = 0;
 
-        T& operator()() { return id; }
+              T& operator()()       { return id; }
         const T& operator()() const { return id; }
-        operator bool () { return id != 0; }
+
+        operator bool() const { return id != 0; }
 
     protected:
         T id;
@@ -41,7 +42,9 @@ class Context: public Wrapper<cl_context>
 {
     public:
         Context();
-        Context(const Context& c);
+        Context(const Context&);
+
+        ~Context();
 
         void create(cl_device_type _deviceType);
         void create(cl_device_id _deviceId);
@@ -61,7 +64,9 @@ class Program: public Wrapper<cl_program>
 {
     public:
         Program() {}
-        Program(const Program& c) = delete;
+        Program(const Program&) = delete;
+
+        ~Program();
 
         void create(const Context& _context, const std::string& _path);
         void release();
@@ -78,7 +83,9 @@ class Kernel: public Wrapper<cl_kernel>
 {
     public:
         Kernel() {}
-        Kernel(const Kernel& c) = delete;
+        Kernel(const Kernel&) = delete;
+
+        ~Kernel();
 
         void create(const Program& _program, const std::string& _name);
         void release();
@@ -91,12 +98,34 @@ class Kernel: public Wrapper<cl_kernel>
         { setArg(_index, sizeof(T), &_value); }
 };
 
+// TODO: Use clCreateImage2D for matrix ?
+class Buffer: public Wrapper<cl_mem>
+{
+    public:
+        Buffer() {}
+        Buffer(const Buffer&) = delete;
+
+        ~Buffer();
+
+        void create(const cl::Context& _context, cl_mem_flags _flags, size_t _byteSize, void* _hostPtr = nullptr);
+        void release();
+
+        friend void swap(Buffer& first, Buffer& second)
+        {
+            using std::swap;
+
+            swap(first.id, second.id);
+        }
+};
+
 class CommandQueue: public Wrapper<cl_command_queue>
 {
     public:
         CommandQueue() {}
+        CommandQueue(const CommandQueue&) = delete;
         CommandQueue(const Context& _context, bool _inOrder = true) { create(_context, _inOrder); }
-        CommandQueue(const CommandQueue& c) = delete;
+
+        ~CommandQueue();
 
         void create(const Context& _context, bool _inOrder = true);
         void release();
@@ -104,9 +133,18 @@ class CommandQueue: public Wrapper<cl_command_queue>
         void join() const;
         const Context& getContext() const;
 
-        void enqueueKernel(Kernel& _kernel, const coords_t& _globalWorkSize, cl_event* _event = nullptr);
-        void enqueueBarrier(const std::vector<cl_event>& _events);
-        void enqueueBarrier();
+        void enqueueKernel(Kernel& _kernel, const coords_t& _globalWorkSize, cl_event* _event = nullptr) const;
+
+        void enqueueBarrier(const std::vector<cl_event>& _events) const;
+        void enqueueBarrier() const;
+
+        void enqueueRead(const Buffer& _buffer, cl_bool _blockingRead, size_t _offset, size_t _byteSize, void* _hostPtr) const;
+        void enqueueWrite(const Buffer& _buffer, cl_bool _blockingWrite, size_t _offset, size_t _byteSize, const void* _hostPtr) const;
+
+        void enqueueRead(const Tensor& _tensor, const cl_bool& _blockingRead = CL_FALSE) const;
+        void enqueueWrite(const Tensor& _tensor, const cl_bool& _blockingWrite = CL_FALSE) const;
+
+        void enqueueCopy(const Buffer& _first, const cl::Buffer& _second, size_t _byteSize) const;
 
     private:
         const Context* context;

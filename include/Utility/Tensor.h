@@ -36,7 +36,7 @@ class Tensor
         Tensor& operator=(Tensor _tensor);
 
 
-        void openCL(const cl::Context& _context, cl_mem_flags _flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR) const; // CL_MEM_USE_HOST_PTR / CL_MEM_COPY_HOST_PTR
+        void openCL(const cl::Context& _context, cl_mem_flags _flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR) const; // CL_MEM_USE_HOST_PTR || CL_MEM_COPY_HOST_PTR
 
         void releaseCL();
 
@@ -54,26 +54,27 @@ class Tensor
 
         bool isnan() const;
 
-        Tensor getTranspose() const;
-
-        size_t getStride(size_t i) const;
-        size_t getIndex(const coords_t&  _indices) const;
-
-        const cl_mem& getBuffer() const;
-        void setBuffer(cl_mem _buffer);
-
-        void readBuffer(cl::CommandQueue& _commandQueue, const cl_bool& _blockingRead = CL_FALSE) const;
-        void writeBuffer(cl::CommandQueue& _commandQueue, const cl_bool& _blockingWrite = CL_FALSE) const;
-
-        value_type* data();
-        const value_type* data() const;
-
         value_type length() const;
         value_type length2() const;
 
         value_type& max();
         const value_type& max() const;
+
+        Tensor max(size_t _dim) const;
+
         coords_t  argmax() const;
+
+        value_type* data();
+        const value_type* data() const;
+
+
+        Tensor getTranspose() const;
+
+        size_t getStride(size_t i) const;
+        size_t getIndex(const coords_t& _indices) const;
+
+        const cl::Buffer& getBuffer() const;
+
 
         bool operator==(const Tensor& _tensor);
         bool operator!=(const Tensor& _tensor);
@@ -106,7 +107,7 @@ class Tensor
         coords_t strides;
         std::vector<value_type> values;
 
-        mutable cl_mem buffer;
+        mutable cl::Buffer buffer;
 
         friend void swap(Tensor& first, Tensor& second)
         {
