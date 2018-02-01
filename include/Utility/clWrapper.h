@@ -8,6 +8,8 @@
 class Tensor;
 using coords_t = std::vector<size_t>;
 
+#ifdef USE_OPENCL
+
 namespace cl
 {
 
@@ -163,3 +165,5 @@ class CommandQueue: public Wrapper<cl_command_queue>
 };
 
 }
+
+#endif // USE_OPENCL

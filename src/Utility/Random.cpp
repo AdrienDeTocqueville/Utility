@@ -1,7 +1,6 @@
 #include "Utility/Random.h"
 
 #include <ctime>
-#include <cstdlib>
 
 long int Random::seed = 0;
 
@@ -10,19 +9,10 @@ bool Random::nextBool()
     return (double)rand() / RAND_MAX < 0.5;
 }
 
+template <>
 int Random::next(int _min, int _max)
 {
     return _min + (rand() % (_max-_min));
-}
-
-float Random::next(float _min, float _max)
-{
-    return _min +  (_max-_min) * (float)rand() / RAND_MAX;
-}
-
-double Random::next(double _min, double _max)
-{
-    return _min + (_max-_min) * (double)rand() / RAND_MAX;
 }
 
 

@@ -7,7 +7,6 @@
 #include "clWrapper.h"
 
 using std::size_t;
-
 using coords_t = std::vector<size_t>;
 
 std::ostream& operator<<(std::ostream& os, const coords_t& coords);
@@ -36,14 +35,12 @@ class Tensor
         Tensor& operator=(Tensor _tensor);
 
 
-        void openCL(const cl::Context& _context, cl_mem_flags _flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR) const; // CL_MEM_USE_HOST_PTR || CL_MEM_COPY_HOST_PTR
-
-        void releaseCL();
-
         const coords_t&  size() const;
         size_t size(size_t _dimension) const;
         size_t nDimensions() const;
         size_t nElements() const;
+
+        void flatten();
 
         void resize(const coords_t&  _dimensions, const value_type& _value = 0.0);
         void resizeAs(const Tensor& _tensor, const value_type& _value = 0.0);
@@ -73,7 +70,12 @@ class Tensor
         size_t getStride(size_t i) const;
         size_t getIndex(const coords_t& _indices) const;
 
+        #ifdef USE_OPENCL
+        void openCL(const cl::Context& _context, cl_mem_flags _flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR) const; // CL_MEM_USE_HOST_PTR || CL_MEM_COPY_HOST_PTR
+        void releaseCL();
+
         const cl::Buffer& getBuffer() const;
+        #endif // USE_OPENCL
 
 
         bool operator==(const Tensor& _tensor);
@@ -107,7 +109,9 @@ class Tensor
         coords_t strides;
         std::vector<value_type> values;
 
+        #ifdef USE_OPENCL
         mutable cl::Buffer buffer;
+        #endif // USE_OPENCL
 
         friend void swap(Tensor& first, Tensor& second)
         {
@@ -116,7 +120,10 @@ class Tensor
             swap(first.dimensions, second.dimensions);
             swap(first.strides, second.strides);
             swap(first.values, second.values);
+
+            #ifdef USE_OPENCL
             swap(first.buffer, second.buffer);
+            #endif // USE_OPENCL
         }
 };
 

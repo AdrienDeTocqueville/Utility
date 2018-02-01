@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 
+#ifdef USE_OPENCL
+
 namespace cl
 {
 
@@ -392,3 +394,5 @@ void CommandQueue::enqueueBarrier() const
 }
 
 }
+
+#endif // USE_OPENCL

@@ -86,19 +86,6 @@ Tensor& Tensor::operator=(Tensor _tensor)
 }
 
 
-void Tensor::openCL(const cl::Context& _context, cl_mem_flags _flags) const
-{
-    size_t byteSize = sizeof (value_type) * nElements();
-    const void* host_ptr = (_flags&CL_MEM_USE_HOST_PTR || _flags&CL_MEM_COPY_HOST_PTR)? data(): nullptr;
-
-    buffer.create(_context, _flags, byteSize, const_cast<void*>(host_ptr));
-}
-
-void Tensor::releaseCL()
-{
-    buffer.release();
-}
-
 const coords_t& Tensor::size() const
 {
     return dimensions;
@@ -124,12 +111,20 @@ size_t Tensor::nElements() const
     return values.size();
 }
 
+void Tensor::flatten()
+{
+    dimensions = {values.size()};
+    strides = {1};
+}
+
 void Tensor::resize(const coords_t& _dimensions, const value_type& _value)
 {
     if (dimensions == _dimensions)
         return;
 
+    #ifdef USE_OPENCL
     releaseCL();
+    #endif // USE_OPENCL
 
     if (!_dimensions.size())
     {
@@ -156,7 +151,9 @@ void Tensor::resizeAs(const Tensor& _tensor, const value_type& _value)
     if (dimensions == _tensor.dimensions)
         return;
 
+    #ifdef USE_OPENCL
     releaseCL();
+    #endif // USE_OPENCL
 
     dimensions = _tensor.dimensions;
     strides = _tensor.strides;
@@ -390,10 +387,25 @@ size_t Tensor::getIndex(const coords_t& _indices) const
     return index;
 }
 
+#ifdef USE_OPENCL
+void Tensor::openCL(const cl::Context& _context, cl_mem_flags _flags) const
+{
+    size_t byteSize = sizeof (value_type) * nElements();
+    const void* host_ptr = (_flags&CL_MEM_USE_HOST_PTR || _flags&CL_MEM_COPY_HOST_PTR)? data(): nullptr;
+
+    buffer.create(_context, _flags, byteSize, const_cast<void*>(host_ptr));
+}
+
+void Tensor::releaseCL()
+{
+    buffer.release();
+}
+
 const cl::Buffer& Tensor::getBuffer() const
 {
     return buffer;
 }
+#endif // USE_OPENCL
 
 bool Tensor::operator==(const Tensor& _tensor)
 {

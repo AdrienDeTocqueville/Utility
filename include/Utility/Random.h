@@ -1,22 +1,24 @@
 #pragma once
 
 #include <initializer_list>
+#include <cstdlib>
 #include <vector>
+
+template <typename T>
+struct default_max
+{
+    static T get() { return 1; }
+};
 
 class Random
 {
     public:
         static bool nextBool();
 
-        // range is [_min, _max[
-        static int next(int _min = 0, int _max = 2);
-        static float next(float _min = 0.0f, float _max = 1.0f);
-        static double next(double _min = 0.0, double _max = 1.0);
-
         template <typename T>
-        static T next(T _min = 0, T _max = 1)
+        static T next(T _min = 0, T _max = default_max<T>::get()) // range is [_min, _max[
         {
-            return next(_min, _max);
+            return _min +  (_max-_min) * (T)rand() / RAND_MAX;
         }
 
 
@@ -47,3 +49,12 @@ class Random
     private:
         static long int seed;
 };
+
+template <>
+struct default_max<int>
+{
+    static int get() { return 2; }
+};
+
+template <>
+int Random::next(int _min, int _max);

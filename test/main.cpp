@@ -6,7 +6,12 @@ int main()
 {
     Random::init();
 
-    std::cout << Random::next(2.0f, 10.0f) << std::endl;
+    Tensor x({3, 4});
+    x.randomize();
+
+    std::cout << x << std::endl;
+    x.flatten();
+    std::cout << x << std::endl;
 
     return 0;
 }
