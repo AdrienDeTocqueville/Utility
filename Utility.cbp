@@ -59,14 +59,14 @@
 		<Unit filename="include/Utility/Tensor.h" />
 		<Unit filename="include/Utility/Utility.h" />
 		<Unit filename="include/Utility/clWrapper.h" />
-		<Unit filename="main.cpp">
-			<Option target="Test" />
-		</Unit>
 		<Unit filename="src/Utility/Error.cpp" />
 		<Unit filename="src/Utility/IOFile.cpp" />
 		<Unit filename="src/Utility/Random.cpp" />
 		<Unit filename="src/Utility/Tensor.cpp" />
 		<Unit filename="src/Utility/clWrapper.cpp" />
+		<Unit filename="test/main.cpp">
+			<Option target="Test" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<envvars />

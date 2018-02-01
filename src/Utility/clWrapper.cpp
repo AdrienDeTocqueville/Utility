@@ -29,19 +29,21 @@ std::vector<cl_platform_id> getPlatformsIds()
     return ids;
 }
 
-std::vector<cl_device_id> getDeviceIds(cl_device_type _deviceType, cl_platform_id _platformId)
+std::vector<cl_device_id> getDeviceIds(DeviceType _deviceType, cl_platform_id _platformId)
 {
+    static cl_device_type deviceTypes[] = {CL_DEVICE_TYPE_CPU, CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ALL};
+
     std::vector<cl_device_id> ids;
 
     cl_int error;
 
     cl_uint deviceCount = 0;
-    error = clGetDeviceIDs(_platformId, _deviceType, 0, nullptr, &deviceCount);
+    error = clGetDeviceIDs(_platformId, deviceTypes[_deviceType], 0, nullptr, &deviceCount);
     if (error != CL_SUCCESS)
         Error::add(ErrorType::WARNING, "OpenCL: Failed to get devices count with error code " + toString(error));
 
     ids.resize(deviceCount);
-    error = clGetDeviceIDs(_platformId, _deviceType, deviceCount, ids.data(), nullptr);
+    error = clGetDeviceIDs(_platformId, deviceTypes[_deviceType], deviceCount, ids.data(), nullptr);
     if (error != CL_SUCCESS)
         Error::add(ErrorType::WARNING, "OpenCL: Failed to get devices with error code " + toString(error));
 
@@ -66,35 +68,32 @@ Context::Context():
     deviceId(0)
 { }
 
-Context::Context(const Context& c):
-    Wrapper<cl_context>()
-{
-    create(c.getDeviceId());
-}
-
 Context::~Context()
 {
     release();
 }
 
-void Context::create(cl_device_type _deviceType)
+void Context::create(DeviceType _deviceType)
 {
     cl_platform_id platformIds = getPlatformsIds().front();
-    deviceId = getDeviceIds(_deviceType, platformIds).front();
 
-    create(deviceId);
+    create( getDeviceIds(_deviceType, platformIds).front() );
 }
 
 void Context::create(cl_device_id _deviceId)
 {
-    if (id || !_deviceId)
+    if (_deviceId == deviceId)
         return;
+
+    if (id)
+        release();
+
 
     cl_int error;
 
+    id = clCreateContext(nullptr, 1, &deviceId, nullptr, nullptr, &error);
     deviceId = _deviceId;
 
-    id = clCreateContext(nullptr, 1, &deviceId, nullptr, nullptr, &error);
     if (error != CL_SUCCESS || id == nullptr)
         Error::add(ErrorType::WARNING, "OpenCL: Failed to create id with error code " + toString(error));
 }
@@ -103,8 +102,8 @@ void Context::release()
 {
     clReleaseContext(id);
     id = 0;
-    deviceId = 0;
 
+    deviceId = 0;
     programs.clear();
 }
 
@@ -205,12 +204,18 @@ Kernel::~Kernel()
 
 void Kernel::create(const Program& _program, const std::string& _name)
 {
-    if (id)
+    if (&_program == program && _name == name)
         return;
+
+    if (id)
+        release();
+
 
     cl_int error;
 
     id = clCreateKernel(_program(), _name.c_str(), &error);
+    program = &_program;
+    name = _name;
 
     if (error != CL_SUCCESS)
     {
@@ -225,6 +230,9 @@ void Kernel::release()
 {
 	clReleaseKernel(id);
     id = 0;
+
+    program = nullptr;
+    name.clear();
 }
 
 void Kernel::setArg(cl_uint _index, size_t _size, const void* _value)
@@ -249,11 +257,18 @@ Buffer::~Buffer()
 
 void Buffer::create(const cl::Context& _context, cl_mem_flags _flags, size_t _byteSize, void* _hostPtr)
 {
-    if (id)
+    if (&_context == context && _flags == flags)
         return;
 
+    if (id)
+        release();
+
+
     cl_int error;
+
     id = clCreateBuffer(_context(), _flags, _byteSize, _hostPtr, &error);
+    context = &_context;
+    flags = _flags;
 
     if (error != CL_SUCCESS)
         Error::add(ErrorType::UNKNOWN_ERROR, "Unable to create buffer: " + toString(error));
@@ -263,6 +278,9 @@ void Buffer::release()
 {
     clReleaseMemObject(id);
     id = 0;
+
+    context = nullptr;
+    flags = 0;
 }
 
 
@@ -274,11 +292,12 @@ CommandQueue::~CommandQueue()
 
 void CommandQueue::create(const Context& _context, bool _inOrder)
 {
-    if (id)
+    if (&_context == context && _inOrder == inOrder)
         return;
 
-    context = &_context;
-    inOrder = _inOrder;
+    if (id)
+        release();
+
 
     cl_int error;
 
@@ -288,6 +307,9 @@ void CommandQueue::create(const Context& _context, bool _inOrder)
 
     id = clCreateCommandQueueWithProperties(_context(), _context.getDeviceId(), properties, &error);
 //    id = clCreateCommandQueue(_context(), _context.getDeviceId(), cqProperties, &error);
+
+    context = &_context;
+    inOrder = _inOrder;
 
     if (error != CL_SUCCESS)
         Error::add(ErrorType::UNKNOWN_ERROR, "clCreateCommandQueue() error: " + toString(error));
@@ -319,6 +341,40 @@ void CommandQueue::enqueueKernel(Kernel& _kernel, const coords_t& _globalWorkSiz
         Error::add(ErrorType::USER_ERROR, "Enqueue kernel: " + toString(error));
 }
 
+void CommandQueue::enqueueRead(const Buffer& _buffer, cl_bool _blockingRead, size_t _offset, size_t _byteSize, void* _hostPtr, cl_event* _event) const
+{
+	cl_int error = clEnqueueReadBuffer(id, _buffer(), _blockingRead, _offset, _byteSize, _hostPtr, 0, nullptr, _event);
+
+    if (error != CL_SUCCESS)
+        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer reading: " + toString(error));
+}
+
+void CommandQueue::enqueueWrite(const Buffer& _buffer, cl_bool _blockingWrite, size_t _offset, size_t _byteSize, const void* _hostPtr, cl_event* _event) const
+{
+	cl_int error = clEnqueueWriteBuffer(id, _buffer(), _blockingWrite, _offset, _byteSize, _hostPtr, 0, nullptr, _event);
+
+    if (error != CL_SUCCESS)
+        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer writing: " + toString(error));
+}
+
+void CommandQueue::enqueueRead(const Tensor& _tensor, const cl_bool& _blockingRead, cl_event* _event) const
+{
+	enqueueRead(_tensor.getBuffer(), _blockingRead, 0, _tensor.nElements() * sizeof(Tensor::value_type), const_cast<void*>((void*)_tensor.data()), _event);
+}
+
+void CommandQueue::enqueueWrite(const Tensor& _tensor, const cl_bool& _blockingWrite, cl_event* _event) const
+{
+	enqueueWrite(_tensor.getBuffer(), _blockingWrite, 0, _tensor.nElements() * sizeof(Tensor::value_type), const_cast<void*>((void*)_tensor.data()), _event);
+}
+
+void CommandQueue::enqueueCopy(const Buffer& _first, const cl::Buffer& _second, size_t _byteSize, cl_event* _event) const
+{
+    cl_int error = clEnqueueCopyBuffer(id, _first(), _second(), 0, 0, _byteSize, 0, nullptr, _event);
+
+    if (error != CL_SUCCESS)
+        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer copy: " + toString(error));
+}
+
 void CommandQueue::enqueueBarrier(const std::vector<cl_event>& _events) const
 {
     cl_int error = clEnqueueBarrierWithWaitList(id, _events.size(), _events.data(), nullptr);
@@ -333,40 +389,6 @@ void CommandQueue::enqueueBarrier() const
 
 	if (error != CL_SUCCESS)
         Error::add(ErrorType::USER_ERROR, "Enqueue barrier: " + toString(error));
-}
-
-void CommandQueue::enqueueRead(const Buffer& _buffer, cl_bool _blockingRead, size_t _offset, size_t _byteSize, void* _hostPtr) const
-{
-	cl_int error = clEnqueueReadBuffer(id, _buffer(), _blockingRead, _offset, _byteSize, _hostPtr, 0, nullptr, nullptr);
-
-    if (error != CL_SUCCESS)
-        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer reading: " + toString(error));
-}
-
-void CommandQueue::enqueueWrite(const Buffer& _buffer, cl_bool _blockingWrite, size_t _offset, size_t _byteSize, const void* _hostPtr) const
-{
-	cl_int error = clEnqueueWriteBuffer(id, _buffer(), _blockingWrite, _offset, _byteSize, _hostPtr, 0, nullptr, nullptr);
-
-    if (error != CL_SUCCESS)
-        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer writing: " + toString(error));
-}
-
-void CommandQueue::enqueueRead(const Tensor& _tensor, const cl_bool& _blockingRead) const
-{
-	enqueueRead(_tensor.getBuffer(), _blockingRead, 0, _tensor.nElements() * sizeof(Tensor::value_type), const_cast<void*>((void*)_tensor.data()));
-}
-
-void CommandQueue::enqueueWrite(const Tensor& _tensor, const cl_bool& _blockingWrite) const
-{
-	enqueueWrite(_tensor.getBuffer(), _blockingWrite, 0, _tensor.nElements() * sizeof(Tensor::value_type), const_cast<void*>((void*)_tensor.data()));
-}
-
-void CommandQueue::enqueueCopy(const Buffer& _first, const cl::Buffer& _second, size_t _byteSize) const
-{
-    cl_int error = clEnqueueCopyBuffer(id, _first(), _second(), 0, 0, _byteSize, 0, nullptr, nullptr);
-
-    if (error != CL_SUCCESS)
-        Error::add(ErrorType::USER_ERROR, "Unable to enqueue a buffer copy: " + toString(error));
 }
 
 }

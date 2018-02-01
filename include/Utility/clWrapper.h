@@ -11,8 +11,11 @@ using coords_t = std::vector<size_t>;
 namespace cl
 {
 
+enum DeviceType {CPU, GPU, ALL};
+
+
 std::vector<cl_platform_id> getPlatformsIds();
-std::vector<cl_device_id> getDeviceIds(cl_device_type _deviceType, cl_platform_id _platformId);
+std::vector<cl_device_id> getDeviceIds(DeviceType _deviceType, cl_platform_id _platformId);
 
 std::string getVersion(cl_platform_id _platformId);
 
@@ -42,11 +45,11 @@ class Context: public Wrapper<cl_context>
 {
     public:
         Context();
-        Context(const Context&);
+        Context(const Context&) = delete;
 
         ~Context();
 
-        void create(cl_device_type _deviceType);
+        void create(DeviceType _deviceType);
         void create(cl_device_id _deviceId);
         void release();
 
@@ -82,7 +85,7 @@ class Program: public Wrapper<cl_program>
 class Kernel: public Wrapper<cl_kernel>
 {
     public:
-        Kernel() {}
+        Kernel(): program(nullptr) {}
         Kernel(const Kernel&) = delete;
 
         ~Kernel();
@@ -96,19 +99,27 @@ class Kernel: public Wrapper<cl_kernel>
         template <typename T>
         void setArg(cl_uint _index, T _value)
         { setArg(_index, sizeof(T), &_value); }
+
+    private:
+        const Program* program;
+        std::string name;
 };
 
 // TODO: Use clCreateImage2D for matrix ?
 class Buffer: public Wrapper<cl_mem>
 {
     public:
-        Buffer() {}
+        Buffer(): context(nullptr) {}
         Buffer(const Buffer&) = delete;
 
         ~Buffer();
 
-        void create(const cl::Context& _context, cl_mem_flags _flags, size_t _byteSize, void* _hostPtr = nullptr);
+        void create(const Context& _context, cl_mem_flags _flags, size_t _byteSize, void* _hostPtr = nullptr);
         void release();
+
+    private:
+        const Context* context;
+        cl_mem_flags flags;
 
         friend void swap(Buffer& first, Buffer& second)
         {
@@ -121,7 +132,7 @@ class Buffer: public Wrapper<cl_mem>
 class CommandQueue: public Wrapper<cl_command_queue>
 {
     public:
-        CommandQueue() {}
+        CommandQueue(): context(nullptr) {}
         CommandQueue(const CommandQueue&) = delete;
         CommandQueue(const Context& _context, bool _inOrder = true) { create(_context, _inOrder); }
 
@@ -135,16 +146,16 @@ class CommandQueue: public Wrapper<cl_command_queue>
 
         void enqueueKernel(Kernel& _kernel, const coords_t& _globalWorkSize, cl_event* _event = nullptr) const;
 
+        void enqueueRead(const Buffer& _buffer, cl_bool _blockingRead, size_t _offset, size_t _byteSize, void* _hostPtr, cl_event* _event = nullptr) const;
+        void enqueueWrite(const Buffer& _buffer, cl_bool _blockingWrite, size_t _offset, size_t _byteSize, const void* _hostPtr, cl_event* _event = nullptr) const;
+
+        void enqueueRead(const Tensor& _tensor, const cl_bool& _blockingRead = CL_FALSE, cl_event* _event = nullptr) const;
+        void enqueueWrite(const Tensor& _tensor, const cl_bool& _blockingWrite = CL_FALSE, cl_event* _event = nullptr) const;
+
+        void enqueueCopy(const Buffer& _first, const Buffer& _second, size_t _byteSize, cl_event* _event = nullptr) const;
+
         void enqueueBarrier(const std::vector<cl_event>& _events) const;
         void enqueueBarrier() const;
-
-        void enqueueRead(const Buffer& _buffer, cl_bool _blockingRead, size_t _offset, size_t _byteSize, void* _hostPtr) const;
-        void enqueueWrite(const Buffer& _buffer, cl_bool _blockingWrite, size_t _offset, size_t _byteSize, const void* _hostPtr) const;
-
-        void enqueueRead(const Tensor& _tensor, const cl_bool& _blockingRead = CL_FALSE) const;
-        void enqueueWrite(const Tensor& _tensor, const cl_bool& _blockingWrite = CL_FALSE) const;
-
-        void enqueueCopy(const Buffer& _first, const cl::Buffer& _second, size_t _byteSize) const;
 
     private:
         const Context* context;

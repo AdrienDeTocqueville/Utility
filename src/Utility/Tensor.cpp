@@ -185,13 +185,7 @@ void Tensor::randomize(value_type _min, value_type _max)
     #endif
 
     for (unsigned i(0) ; i < values.size() ; i++)
-    {
-        #ifdef TENSOR_DOUBLE
-        values[i] = Random::nextDouble(_min, _max);
-        #else
-        values[i] = Random::nextFloat(_min, _max);
-        #endif // TENSOR_DOUBLE
-    }
+        values[i] = Random::next(_min, _max);
 }
 
 bool Tensor::isnan() const

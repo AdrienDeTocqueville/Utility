@@ -7,22 +7,22 @@ long int Random::seed = 0;
 
 bool Random::nextBool()
 {
-    return (double)rand()/RAND_MAX < 0.5;
+    return (double)rand() / RAND_MAX < 0.5;
 }
 
-int Random::nextInt(int _min, int _max)
+int Random::next(int _min, int _max)
 {
-    return _min + (rand() % (_max - _min));
+    return _min + (rand() % (_max-_min));
 }
 
-float Random::nextFloat(float _min, float _max)
+float Random::next(float _min, float _max)
 {
     return _min +  (_max-_min) * (float)rand() / RAND_MAX;
 }
 
-double Random::nextDouble(double _min, double _max)
+double Random::next(double _min, double _max)
 {
-    return _min + (_max - _min) * (double)rand() / RAND_MAX;
+    return _min + (_max-_min) * (double)rand() / RAND_MAX;
 }
 
 
