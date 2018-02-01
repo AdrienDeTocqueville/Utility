@@ -13,6 +13,12 @@ class Random
         static float next(float _min = 0.0f, float _max = 1.0f);
         static double next(double _min = 0.0, double _max = 1.0);
 
+        template <typename T>
+        static T next(T _min = 0, T _max = 1)
+        {
+            return next(_min, _max);
+        }
+
 
         template <typename T>
         static T& element(std::initializer_list<T> _elements)
