@@ -9,12 +9,6 @@ bool Random::nextBool()
     return (double)rand() / RAND_MAX < 0.5;
 }
 
-template <>
-int Random::next(int _min, int _max)
-{
-    return _min + (rand() % (_max-_min));
-}
-
 
 void Random::init()
 {

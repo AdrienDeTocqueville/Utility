@@ -1,14 +1,12 @@
 #pragma once
 
 #include <initializer_list>
+#include <type_traits>
 #include <cstdlib>
 #include <vector>
 
-template <typename T>
-struct default_max
-{
-    static T get() { return 1; }
-};
+#include <iostream>
+
 
 class Random
 {
@@ -16,9 +14,15 @@ class Random
         static bool nextBool();
 
         template <typename T>
-        static T next(T _min = 0, T _max = default_max<T>::get()) // range is [_min, _max[
+        static typename std::enable_if<!std::is_integral<T>::value, T>::type next(T _min = 0, T _max = 1) // range is [_min, _max[
         {
             return _min +  (_max-_min) * (T)rand() / RAND_MAX;
+        }
+
+        template <typename T>
+        static typename std::enable_if<std::is_integral<T>::value, T>::type next(T _min = 0, T _max = 2) // range is [_min, _max[
+        {
+            return _min + (rand() % (_max-_min));
         }
 
 
@@ -37,7 +41,10 @@ class Random
         template <typename T>
         static const T& element(const std::vector<T>& _elements)
         {
-            return _elements[ Random::next((size_t)0, _elements.size()) ];
+            size_t i = Random::next((size_t)0, _elements.size());
+            if (i >= _elements.size())
+            std::cout << "erreur" << std::endl;
+            return _elements[ i ];
         }
 
 
@@ -49,12 +56,3 @@ class Random
     private:
         static long int seed;
 };
-
-template <>
-struct default_max<int>
-{
-    static int get() { return 2; }
-};
-
-template <>
-int Random::next(int _min, int _max);
