@@ -23,21 +23,21 @@ class Random
 
 
         template <typename T>
-        static T& element(std::initializer_list<T> _elements)
+        static const T& element(std::initializer_list<T> _elements)
         {
-            return *(_elements.begin() + Random::next(0, _elements.size()));
+            return *(_elements.begin() + Random::next((size_t)0, _elements.size()));
         }
 
         template <typename T>
         static T& element(std::vector<T>& _elements)
         {
-            return _elements[ Random::next(0, _elements.size()) ];
+            return _elements[ Random::next((size_t)0, _elements.size()) ];
         }
 
         template <typename T>
         static const T& element(const std::vector<T>& _elements)
         {
-            return _elements[ Random::next(0, _elements.size()) ];
+            return _elements[ Random::next((size_t)0, _elements.size()) ];
         }
 
 
