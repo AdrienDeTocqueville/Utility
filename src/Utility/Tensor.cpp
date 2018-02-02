@@ -531,6 +531,17 @@ void Tensor::operator-=(const Tensor& _tensor)
         values[i] -= _tensor.values[i];
 }
 
+void Tensor::operator*=(const value_type& s)
+{
+    for (unsigned i(0) ; i < values.size() ; i++)
+        values[i] *= s;
+}
+
+void Tensor::operator/=(const value_type& s)
+{
+    *this *= 1.0 / s;
+}
+
 void Tensor::addOuterProduct(const Tensor& a, const Tensor& b)
 {
     #ifdef TENSOR_SAFE

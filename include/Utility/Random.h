@@ -5,8 +5,6 @@
 #include <cstdlib>
 #include <vector>
 
-#include <iostream>
-
 
 class Random
 {
@@ -41,10 +39,7 @@ class Random
         template <typename T>
         static const T& element(const std::vector<T>& _elements)
         {
-            size_t i = Random::next((size_t)0, _elements.size());
-            if (i >= _elements.size())
-            std::cout << "erreur" << std::endl;
-            return _elements[ i ];
+            return _elements[ Random::next((size_t)0, _elements.size()) ];
         }
 
 

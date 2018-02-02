@@ -35,7 +35,6 @@ std::vector<cl_platform_id> getPlatformsIds()
 std::vector<cl_device_id> getDeviceIds(DeviceType _deviceType, cl_platform_id _platformId)
 {
     static cl_device_type deviceTypes[] = {CL_DEVICE_TYPE_CPU, CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ALL};
-    std::cout << deviceTypes[_deviceType] << std::endl;
 
     std::vector<cl_device_id> ids;
 

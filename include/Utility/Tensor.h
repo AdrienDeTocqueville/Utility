@@ -70,6 +70,8 @@ class Tensor
         size_t getStride(size_t i) const;
         size_t getIndex(const coords_t& _indices) const;
 
+        template <typename T> void cast();
+
         #ifdef USE_OPENCL
         void openCL(const cl::Context& _context, cl_mem_flags _flags = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR) const; // CL_MEM_USE_HOST_PTR || CL_MEM_COPY_HOST_PTR
         void releaseCL();
@@ -96,6 +98,8 @@ class Tensor
 
         void operator+=(const Tensor& _tensor);
         void operator-=(const Tensor& _tensor);
+        void operator*=(const value_type& s);
+        void operator/=(const value_type& s);
 
         void addOuterProduct(const Tensor& a, const Tensor& b);
 
@@ -126,6 +130,13 @@ class Tensor
             #endif // USE_OPENCL
         }
 };
+
+template <typename T>
+void Tensor::cast()
+{
+    for (Tensor::value_type& v: values)
+        v = (T)v;
+}
 
 Tensor::value_type dot(const Tensor& a, const Tensor& b);
 
