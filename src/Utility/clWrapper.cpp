@@ -1,3 +1,5 @@
+#ifdef USE_OPENCL
+
 #include "Utility/clWrapper.h"
 
 #include "Utility/Error.h"
@@ -7,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 
-#ifdef USE_OPENCL
 
 namespace cl
 {
@@ -34,6 +35,7 @@ std::vector<cl_platform_id> getPlatformsIds()
 std::vector<cl_device_id> getDeviceIds(DeviceType _deviceType, cl_platform_id _platformId)
 {
     static cl_device_type deviceTypes[] = {CL_DEVICE_TYPE_CPU, CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ALL};
+    std::cout << deviceTypes[_deviceType] << std::endl;
 
     std::vector<cl_device_id> ids;
 
@@ -77,9 +79,9 @@ Context::~Context()
 
 void Context::create(DeviceType _deviceType)
 {
-    cl_platform_id platformIds = getPlatformsIds().front();
+    cl_platform_id platformId = getPlatformsIds().front();
 
-    create( getDeviceIds(_deviceType, platformIds).front() );
+    create( getDeviceIds(_deviceType, platformId).front() );
 }
 
 void Context::create(cl_device_id _deviceId)
@@ -93,11 +95,11 @@ void Context::create(cl_device_id _deviceId)
 
     cl_int error;
 
-    id = clCreateContext(nullptr, 1, &deviceId, nullptr, nullptr, &error);
+    id = clCreateContext(nullptr, 1, &_deviceId, nullptr, nullptr, &error);
     deviceId = _deviceId;
 
-    if (error != CL_SUCCESS || id == nullptr)
-        Error::add(ErrorType::WARNING, "OpenCL: Failed to create id with error code " + toString(error));
+    if (error != CL_SUCCESS)
+        Error::add(ErrorType::WARNING, "Error " + toString(error) + " while creating context on device: " + toString(_deviceId));
 }
 
 void Context::release()

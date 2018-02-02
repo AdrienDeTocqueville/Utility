@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef USE_OPENCL
+
 #include <CL/opencl.h>
 #include <string>
 #include <vector>
@@ -7,8 +9,6 @@
 
 class Tensor;
 using coords_t = std::vector<size_t>;
-
-#ifdef USE_OPENCL
 
 namespace cl
 {

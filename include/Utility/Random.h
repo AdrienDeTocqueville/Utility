@@ -48,11 +48,12 @@ class Random
         }
 
 
-        static void init();
         static void setSeed(long int _seed);
-
         static long int getSeed();
 
     private:
         static long int seed;
+        static Random initalizer;
+
+        Random();
 };

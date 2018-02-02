@@ -4,19 +4,11 @@
 
 int main()
 {
-    Random::init();
+    std::cout << Random::getSeed() << std::endl;
 
-    Tensor x({3, 4});
-    x.randomize();
+    std::cout << CL_DEVICE_TYPE_ALL << std::endl;
 
-    std::cout << x << std::endl;
-    x.flatten();
-    std::cout << x << std::endl;
-
-    const std::vector<int> v{1, 2, 3};
-
-    for (unsigned i(0); i < 10; ++i)
-        Random::element(v);
+    cl::getDeviceIds(cl::DeviceType::ALL, cl::getPlatformsIds().front());
 
     return 0;
 }

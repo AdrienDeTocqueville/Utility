@@ -3,6 +3,7 @@
 #include <ctime>
 
 long int Random::seed = 0;
+Random Random::initalizer;
 
 bool Random::nextBool()
 {
@@ -10,7 +11,7 @@ bool Random::nextBool()
 }
 
 
-void Random::init()
+Random::Random()
 {
     setSeed( static_cast<long int>(time(nullptr)) );
 }

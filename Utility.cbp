@@ -48,7 +48,6 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="C:/Windows/System32/OpenCL.dll" />
 				</Linker>
 			</Target>
 			<Target title="Test">
@@ -74,7 +73,7 @@
 					<Add option="-DUSE_OPENCL" />
 				</Compiler>
 				<Linker>
-					<Add library="C:/Windows/System32/OpenCL.dll" />
+					<Add library="libOpenCL" />
 				</Linker>
 			</Target>
 		</Build>
